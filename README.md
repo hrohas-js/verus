@@ -23,7 +23,28 @@
 
 ## 🛠 Установка и запуск
 
-### Локальная разработка
+### 🚀 Автоматическое развертывание
+
+**Windows (PowerShell):**
+```powershell
+.\deploy-simple.ps1
+```
+
+**Linux/macOS (Bash):**
+```bash
+chmod +x deploy-dev.sh
+./deploy-dev.sh
+```
+
+### 📋 Требования для автоматического развертывания
+
+- **PHP 8.2+** - [Скачать](https://windows.php.net/download/) или установить через [Chocolatey](https://chocolatey.org/): `choco install php`
+- **Composer** - [Скачать](https://getcomposer.org/download/) или установить через Chocolatey: `choco install composer`
+- **Docker Desktop** (опционально) - [Скачать](https://www.docker.com/products/docker-desktop/)
+
+### 🔧 Ручная установка
+
+#### Локальная разработка
 
 1. **Клонирование и установка зависимостей:**
 ```bash
@@ -34,7 +55,7 @@ composer install
 
 2. **Настройка окружения:**
 ```bash
-cp .env.example .env
+# Создайте .env файл (уже создан)
 php artisan key:generate
 ```
 
@@ -59,26 +80,31 @@ php artisan migrate
 
 5. **Запуск сервера:**
 ```bash
-php artisan serve
+php artisan serve --host=0.0.0.0 --port=8000
 ```
 
 API будет доступен по адресу: `http://localhost:8000/api`
 
-### Docker
+#### Docker
 
 1. **Сборка и запуск:**
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
 
-2. **Выполнение миграций:**
+2. **Генерация ключа приложения:**
 ```bash
-docker-compose exec app php artisan migrate
+docker compose exec app php artisan key:generate
 ```
 
-3. **Просмотр логов:**
+3. **Выполнение миграций:**
 ```bash
-docker-compose logs -f
+docker compose exec app php artisan migrate
+```
+
+4. **Просмотр логов:**
+```bash
+docker compose logs -f
 ```
 
 API будет доступен по адресу: `http://localhost:8000/api`
