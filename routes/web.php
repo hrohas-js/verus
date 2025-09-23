@@ -14,5 +14,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return response()->json([
+        'message' => 'Verus Warehouse API',
+        'status' => 'running',
+        'version' => '1.0.0',
+        'timestamp' => now()->toISOString()
+    ]);
 });
