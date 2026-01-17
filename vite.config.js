@@ -13,9 +13,9 @@ export default defineConfig({
         vue(),
         vuetify({ 
             autoImport: true,
-            styles: {
-                configFile: 'resources/css/vuetify-settings.scss',
-            }
+            // styles: {
+            //     configFile: 'resources/css/vuetify-settings.scss',
+            // }
         }),
     ],
     resolve: {

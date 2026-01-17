@@ -2,26 +2,39 @@
   <v-container class="catalog-container" fluid>
     <div class="header">
       <h1>Складской учет</h1>
-      <v-btn
-        v-if="isAdminPath"
-        color="primary"
-        variant="flat"
-        @click="goToRoot"
-        v-ripple
-        aria-label="Назад к выдаче"
-      >
-        Назад к выдаче
-      </v-btn>
-      <v-btn
-        v-else
-        color="primary"
-        variant="flat"
-        @click="goToAdmin"
-        v-ripple
-        aria-label="Редактировать остатки"
-      >
-        Редактировать остатки
-      </v-btn>
+      <div class="header-buttons">
+        <v-btn
+          v-if="isAdminPath"
+          color="primary"
+          variant="flat"
+          @click="goToRoot"
+          v-ripple
+          aria-label="Назад к выдаче"
+        >
+          Назад к выдаче
+        </v-btn>
+        <template v-else>
+          <v-btn
+            color="primary"
+            variant="flat"
+            @click="goToReport"
+            v-ripple
+            aria-label="Получить отчет"
+            class="report-btn"
+          >
+            ПОЛУЧИТЬ ОТЧЕТ
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            @click="goToAdmin"
+            v-ripple
+            aria-label="Редактировать остатки"
+          >
+            Редактировать остатки
+          </v-btn>
+        </template>
+      </div>
     </div>
 
     <!-- Loading and Error States -->
@@ -37,7 +50,13 @@
     <div class="catalog-grid" v-else>
       <div v-for="item in stockItems" :key="item.id" class="catalog-item">
         <div class="item-image">
-          <span class="item-emoji">{{ item.image }}</span>
+          <img 
+            v-if="item.image && (item.image.startsWith('http') || item.image.startsWith('/'))" 
+            :src="item.image" 
+            :alt="item.title"
+            class="item-image-icon"
+          />
+          <span v-else class="item-emoji">{{ item.image || '📦' }}</span>
           <div v-if="isItemSelected(item.id)" class="quantity-badge">
             {{ getSelectedQuantity(item.id) }}
           </div>
@@ -132,6 +151,10 @@ const goToRoot = () => {
   router.push('/')
 }
 
+const goToReport = () => {
+  router.push({ name: 'report' })
+}
+
 const isAdminPath = computed(() => route.path.startsWith('/admin') || route.name === 'admin')
 
 const editingId = ref<number | null>(null)
@@ -191,9 +214,18 @@ const saveQuantity = async (item: { id: number; title: string; image: string }) 
   flex: 0 1 auto;
 }
 
-.header > :deep(.v-btn) {
+.header-buttons {
   position: absolute;
   right: 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.report-btn {
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .item-stock {
@@ -292,6 +324,13 @@ const saveQuantity = async (item: { id: number; title: string; image: string }) 
 
 .item-emoji {
   font-size: 3rem;
+  display: block;
+}
+
+.item-image-icon {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
   display: block;
 }
 

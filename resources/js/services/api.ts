@@ -69,36 +69,41 @@ class ApiService {
 
   // Get all equipment
   async getAllEquipment(): Promise<StockItem[]> {
-    return this.request<StockItem[]>('/equipment')
+    const response = await this.request<ApiResponse<StockItem[]>>('/equipment')
+    return response.data
   }
 
   // Get equipment by ID
   async getEquipmentById(id: number): Promise<StockItem> {
-    return this.request<StockItem>(`/equipment/${id}`)
+    const response = await this.request<ApiResponse<StockItem>>(`/equipment/${id}`)
+    return response.data
   }
 
   // Create new equipment
   async createEquipment(data: Omit<StockItem, 'id' | 'created_at' | 'updated_at'>): Promise<StockItem> {
-    return this.request<StockItem>('/equipment', {
+    const response = await this.request<ApiResponse<StockItem>>('/equipment', {
       method: 'POST',
       body: JSON.stringify(data),
     })
+    return response.data
   }
 
   // Update equipment
   async updateEquipment(id: number, data: Partial<Omit<StockItem, 'id' | 'created_at' | 'updated_at'>>): Promise<StockItem> {
-    return this.request<StockItem>(`/equipment/${id}`, {
+    const response = await this.request<ApiResponse<StockItem>>(`/equipment/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     })
+    return response.data
   }
 
   // Update equipment quantity
   async updateEquipmentQuantity(id: number, quantity: number): Promise<StockItem> {
-    return this.request<StockItem>(`/equipment/${id}/quantity`, {
+    const response = await this.request<ApiResponse<StockItem>>(`/equipment/${id}/quantity`, {
       method: 'PATCH',
       body: JSON.stringify({ quantity }),
     })
+    return response.data
   }
 
   // Delete equipment
@@ -115,6 +120,116 @@ class ApiService {
       this.updateEquipmentQuantity(id, quantity)
     )
     return Promise.all(promises)
+  }
+
+  // Orders API methods
+  async createOrder(data: {
+    car_number: string
+    order_date?: string
+    status?: string
+    notes?: string
+    is_pair_crew?: boolean
+    items: Array<{ equipment_id: number; quantity: number }>
+  }): Promise<any> {
+    const response = await this.request<ApiResponse<any>>('/orders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+    return response.data
+  }
+
+  async getAllOrders(): Promise<any[]> {
+    const response = await this.request<ApiResponse<any[]>>('/orders')
+    return response.data
+  }
+
+  async getOrderById(id: number): Promise<any> {
+    const response = await this.request<ApiResponse<any>>(`/orders/${id}`)
+    return response.data
+  }
+
+  // Download Excel report
+  async downloadReport(): Promise<void> {
+    const url = `${API_BASE_URL}/reports/excel`
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      })
+
+      if (!response.ok) {
+        throw new ApiError(`HTTP ${response.status}: ${response.statusText}`, response.status, response)
+      }
+
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      
+      // Получаем имя файла из заголовка Content-Disposition или используем дефолтное
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let fileName = 'report_' + new Date().toISOString().split('T')[0] + '.xlsx'
+      
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+        if (fileNameMatch && fileNameMatch[1]) {
+          fileName = fileNameMatch[1].replace(/['"]/g, '')
+        }
+      }
+      
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(downloadUrl)
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error
+      }
+      throw new ApiError(
+        error instanceof Error ? error.message : 'Failed to download report',
+        0
+      )
+    }
+  }
+
+  // Get report data for table view
+  async getReportData(): Promise<{
+    stock: Array<{
+      id: number
+      title: string
+      quantity: number
+      image: string
+    }>
+    orders: Array<{
+      id: number
+      order_date: string
+      car_number: string
+      status: string
+      is_pair_crew: string
+      items: string
+    }>
+  }> {
+    const response = await this.request<ApiResponse<{
+      stock: Array<{
+        id: number
+        title: string
+        quantity: number
+        image: string
+      }>
+      orders: Array<{
+        id: number
+        order_date: string
+        car_number: string
+        status: string
+        is_pair_crew: string
+        items: string
+      }>
+    }>>('/reports/data')
+    return response.data
   }
 }
 

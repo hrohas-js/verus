@@ -7,6 +7,7 @@ export const useStockStore = defineStore('stock', () => {
   const stockItems = ref<StockItem[]>([])
   const selectedItems = ref<Map<number, number>>(new Map()) // itemId -> selectedQuantity
   const carNumber = ref('')
+  const isPairCrew = ref(false) // Парный экипаж
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -89,24 +90,57 @@ export const useStockStore = defineStore('stock', () => {
     // Replace Map instance to ensure dependents update
     selectedItems.value = new Map()
     carNumber.value = ''
+    isPairCrew.value = false
   }
 
   // Process order and update stock
-  const processOrder = async () => {
+  const processOrder = async (orderCarNumber?: string, pairCrew: boolean = false) => {
     loading.value = true
     error.value = null
     try {
       const updates: { id: number; quantity: number }[] = []
+      const orderItems: Array<{ equipment_id: number; quantity: number }> = []
+
+      // Находим ID незамерзайки
+      const nezamerzaykaItem = stockItems.value.find(item => 
+        item.title.toLowerCase().includes('незамерзайка') || 
+        item.title.toLowerCase().includes('незамерзайк')
+      )
 
       for (const [itemId, selectedQuantity] of selectedItems.value.entries()) {
         const stockItem = stockItems.value.find((item) => item.id === itemId)
         if (stockItem) {
-          const newQuantity = stockItem.quantity - selectedQuantity
+          let finalQuantity = selectedQuantity
+          
+          // Если это незамерзайка и парный экипаж, удваиваем количество
+          if (nezamerzaykaItem && itemId === nezamerzaykaItem.id && pairCrew) {
+            finalQuantity = selectedQuantity * 2
+          }
+          
+          const newQuantity = stockItem.quantity - finalQuantity
           updates.push({ id: itemId, quantity: newQuantity })
+          orderItems.push({ equipment_id: itemId, quantity: finalQuantity })
         }
       }
 
       if (updates.length > 0) {
+        // Сохраняем заказ в БД, если передан номер машины
+        if (orderCarNumber && orderCarNumber.trim()) {
+          try {
+            await apiService.createOrder({
+              car_number: orderCarNumber.trim(),
+              order_date: new Date().toISOString(),
+              status: 'completed',
+              is_pair_crew: pairCrew,
+              items: orderItems,
+            })
+          } catch (orderErr) {
+            console.error('Failed to save order to database:', orderErr)
+            // Продолжаем выполнение даже если не удалось сохранить заказ
+          }
+        }
+
+        // Обновляем остатки товаров
         await apiService.batchUpdateQuantities(updates)
         clearSelection()
         await loadStockItems() // Refresh stock items
@@ -195,6 +229,7 @@ export const useStockStore = defineStore('stock', () => {
     stockItems,
     selectedItems,
     carNumber,
+    isPairCrew,
     loading,
     error,
     orderItems,

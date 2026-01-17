@@ -1,15 +1,19 @@
 <template>
   <v-container class="order-container" fluid>
     <div class="header">
-      <h1>ВАШ ЗАКАЗ</h1>
       <v-btn
+        icon
         variant="text"
         color="primary"
         @click="goBack"
         v-ripple
-        aria-label="Редактировать заказ"
-        >Редактировать</v-btn
+        aria-label="Назад"
+        class="back-btn"
       >
+        <v-icon>mdi-arrow-left</v-icon>
+      </v-btn>
+      <h1>ВАШ ЗАКАЗ</h1>
+      <div class="header-spacer"></div>
     </div>
 
     <!-- Error Alert -->
@@ -20,12 +24,24 @@
     <div class="order-items">
       <div v-for="item in orderItems" :key="item.id" class="order-item">
         <div class="item-image">
-          <span class="item-emoji">{{ item.image }}</span>
+          <img 
+            v-if="item.image && (item.image.startsWith('http') || item.image.startsWith('/'))" 
+            :src="item.image" 
+            :alt="item.title"
+            class="item-image-icon"
+          />
+          <span v-else class="item-emoji">{{ item.image || '📦' }}</span>
         </div>
 
         <div class="item-details">
           <h3 class="item-title">{{ item.title }}</h3>
-          <p class="item-quantity">x{{ item.selectedQuantity }}</p>
+          <p class="item-quantity">
+            x{{ 
+              (item.title.toLowerCase().includes('незамерзайка') || item.title.toLowerCase().includes('незамерзайк')) && isPairCrew
+                ? item.selectedQuantity * 2
+                : item.selectedQuantity
+            }}
+          </p>
           <p class="item-description">{{ getItemDescription(item.title) }}</p>
         </div>
       </div>
@@ -41,6 +57,20 @@
         variant="outlined"
         color="primary"
       />
+      
+      <!-- Чекбокс для парного экипажа (только если есть незамерзайка в заказе) -->
+      <v-checkbox
+        v-if="hasNezamerzayka"
+        v-model="isPairCrew"
+        label="Парный экипаж"
+        color="primary"
+        class="pair-crew-checkbox"
+        :aria-label="'Парный экипаж'"
+      >
+        <template v-slot:label>
+          <span class="pair-crew-label">Парный экипаж</span>
+        </template>
+      </v-checkbox>
     </div>
 
     <div class="order-footer">
@@ -64,13 +94,13 @@ import { storeToRefs } from 'pinia'
 import { useStockStore } from '@/stores/stock'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const stockStore = useStockStore()
 const router = useRouter()
 const user = useUserStore()
 
-const { orderItems, carNumber, loading, error } = storeToRefs(stockStore)
+const { orderItems, carNumber, isPairCrew, loading, error } = storeToRefs(stockStore)
 const { processOrder, clearError } = stockStore
 
 const goBack = () => {
@@ -89,10 +119,26 @@ const submitOrder = async () => {
 
   const header = `Выдача комплектующих`
   const carLine = `Авто: ${carNumber.value.trim()}`
+  
+  // Находим незамерзайку для корректного отображения количества
+  const nezamerzaykaItem = orderItems.value.find(item => 
+    item.title.toLowerCase().includes('незамерзайка') || 
+    item.title.toLowerCase().includes('незамерзайк')
+  )
+  
   const itemsLines = orderItems.value
-    .map((i) => `• ${i.title} — ${i.selectedQuantity} шт.`)
+    .map((i) => {
+      let quantity = i.selectedQuantity
+      // Если это незамерзайка и парный экипаж, показываем удвоенное количество
+      if (nezamerzaykaItem && i.id === nezamerzaykaItem.id && isPairCrew.value) {
+        quantity = i.selectedQuantity * 2
+      }
+      return `• ${i.title} — ${quantity} шт.`
+    })
     .join('\n')
-  const text = `${header}\n${carLine}\n\nПозиции:\n${itemsLines}`
+  
+  const pairCrewLine = isPairCrew.value && nezamerzaykaItem ? '\nПарный экипаж: Да' : ''
+  const text = `${header}\n${carLine}${pairCrewLine}\n\nПозиции:\n${itemsLines}`
 
   try {
     const resp = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -105,7 +151,8 @@ const submitOrder = async () => {
       throw new Error(`Telegram API error: ${resp.status}`)
     }
 
-    await processOrder()
+    // Сохраняем заказ в БД и обновляем остатки
+    await processOrder(carNumber.value.trim(), isPairCrew.value)
     // After processing, return to catalog
     const roleParam = user.isWarehouse ? 'admin' : 'mech'
     router.push({ name: 'catalog', params: { role: roleParam } })
@@ -138,6 +185,14 @@ const getItemDescription = (title: string): string => {
   }
   return descriptions[title] || 'Складской товар'
 }
+
+// Проверка наличия незамерзайки в заказе
+const hasNezamerzayka = computed(() => {
+  return orderItems.value.some(item => 
+    item.title.toLowerCase().includes('незамерзайка') || 
+    item.title.toLowerCase().includes('незамерзайк')
+  )
+})
 </script>
 
 <script lang="ts">
@@ -159,6 +214,7 @@ export default {}
   margin-bottom: 30px;
   padding-bottom: 15px;
   border-bottom: 1px solid #ddd;
+  position: relative;
 }
 
 .header h1 {
@@ -166,6 +222,17 @@ export default {}
   font-size: 1.8rem;
   margin: 0;
   font-weight: bold;
+  flex: 1;
+  text-align: center;
+}
+
+.header-spacer {
+  width: 48px; /* Same width as back button to center the title */
+}
+
+.back-btn {
+  position: absolute;
+  left: 0;
 }
 
 .edit-btn {
@@ -201,6 +268,13 @@ export default {}
 
 .item-emoji {
   font-size: 2.5rem;
+  display: block;
+}
+
+.item-image-icon {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
   display: block;
 }
 
@@ -257,6 +331,26 @@ export default {}
 .car-input:focus {
   outline: none;
   border-color: #4caf50;
+}
+
+.pair-crew-checkbox {
+  margin-top: 15px;
+}
+
+.pair-crew-label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.pair-crew-checkbox {
+  margin-top: 15px;
+}
+
+.pair-crew-label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
 }
 
 .order-footer {

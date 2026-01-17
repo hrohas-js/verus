@@ -10,12 +10,8 @@ return new class () extends Migration {
      */
     public function up(): void
     {
-        Schema::create('equipment', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->integer('quantity');
-            $table->string('image');
-            $table->timestamps();
+        Schema::table('orders', function (Blueprint $table) {
+            $table->boolean('is_pair_crew')->default(false)->after('status'); // Парный экипаж
         });
     }
 
@@ -24,6 +20,8 @@ return new class () extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('equipment');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->dropColumn('is_pair_crew');
+        });
     }
 };

@@ -1,0 +1,5 @@
+{"id":"log_1768673468_A","timestamp":1768673468000,"location":"EquipmentController.php:17","message":"index() entry","data":{"method":"GET"},"sessionId":"debug-session","runId":"post-fix","hypothesisId":"A"}
+{"id":"log_1768673468_B","timestamp":1768673468000,"location":"EquipmentController.php:20","message":"Before Equipment::all()","data":{"db_connection":"sqlite","db_database":"\/Users\/a1111\/Desktop\/verus\/database\/database.sqlite","db_file_exists":true},"sessionId":"debug-session","runId":"post-fix","hypothesisId":"B"}
+{"id":"log_1768673468_C","timestamp":1768673468000,"location":"EquipmentController.php:23","message":"After Equipment::all()","data":{"count":0},"sessionId":"debug-session","runId":"post-fix","hypothesisId":"C"}
+{"id":"log_1768673468_D","timestamp":1768673468000,"location":"EquipmentController.php:25","message":"Before EquipmentResource::collection","data":[],"sessionId":"debug-session","runId":"post-fix","hypothesisId":"D"}
+{"id":"log_1768673468_E","timestamp":1768673468000,"location":"EquipmentController.php:29","message":"After EquipmentResource::collection","data":[],"sessionId":"debug-session","runId":"post-fix","hypothesisId":"E"}

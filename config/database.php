@@ -38,7 +38,22 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DATABASE_URL'),
-            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+            'database' => (function() {
+                $dbPath = env('DB_DATABASE');
+                if (!$dbPath) {
+                    return database_path('database.sqlite');
+                }
+                // Если путь абсолютный (начинается с /), используем как есть
+                if (strpos($dbPath, '/') === 0) {
+                    return $dbPath;
+                }
+                // Если путь начинается с database/, используем base_path (не database_path!)
+                if (strpos($dbPath, 'database/') === 0) {
+                    return base_path($dbPath);
+                }
+                // Для других относительных путей используем database_path
+                return database_path($dbPath);
+            })(),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],

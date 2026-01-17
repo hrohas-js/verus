@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import StockCatalog from '@/components/StockCatalog.vue'
 import OrderSummary from '@/components/OrderSummary.vue'
 import StockItemForm from '@/components/StockItemForm.vue'
+import ReportView from '@/components/ReportView.vue'
 import { useUserStore } from '@/stores/user'
 
 const router = createRouter({
@@ -20,6 +21,11 @@ const router = createRouter({
       path: '/order',
       name: 'order',
       component: OrderSummary,
+    },
+    {
+      path: '/report',
+      name: 'report',
+      component: ReportView,
     },
     {
       path: '/items/:id',
