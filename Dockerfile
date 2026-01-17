@@ -7,16 +7,27 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libzip-dev \
     zip \
     unzip \
     sqlite3 \
-    libsqlite3-dev
-
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+    libsqlite3-dev \
+    libicu-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install \
+    pdo_mysql \
+    pdo_sqlite \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip \
+    intl \
+    xml \
+    soap
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -24,14 +35,17 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy existing application directory contents
-COPY . /var/www
+# Copy composer files first for better caching
+COPY composer.json composer.lock ./
 
-# Copy existing application directory permissions
+# Install dependencies (without scripts to avoid errors)
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+
+# Copy application code
 COPY --chown=www-data:www-data . /var/www
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Run composer scripts after copying all files
+RUN composer dump-autoload --optimize
 
 # Create database file
 RUN touch /var/www/database/database.sqlite
