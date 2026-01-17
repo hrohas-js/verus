@@ -1,0 +1,38 @@
+# Dependencies - installed in container
+/node_modules
+/vendor
+
+# Git
+.git
+.gitignore
+
+# IDE and OS
+.idea
+.vscode
+.DS_Store
+*.swp
+*.swo
+
+# Env files - set at runtime
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+/public/hot
+/public/storage
+/storage/*.key
+
+# Tests and dev
+/tests
+/phpunit.xml
+/.phpunit.result.cache
+
+# Docs
+*.md
+!README.md
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
