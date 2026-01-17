@@ -3,24 +3,14 @@ services:
     name: verus-warehouse-api
     env: php
     plan: free
-    buildCommand: |
-      composer install --no-dev --optimize-autoloader
-      npm install
-      npm run build-only
-      php artisan key:generate
-      php artisan migrate --force
-      php artisan config:cache
-      php artisan route:cache
-      php artisan view:cache
+    buildCommand: bash render-build.sh
     startCommand: php -S 0.0.0.0:$PORT -t public server.php
-    healthCheckPath: /
+    healthCheckPath: /api/health
     envVars:
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: false
-      - key: APP_KEY
-        value: base64:$(openssl rand -base64 32)
       - key: DB_CONNECTION
         value: sqlite
       - key: DB_DATABASE
@@ -29,9 +19,13 @@ services:
         value: stack
       - key: LOG_LEVEL
         value: error
-      - key: PORT
-        value: 10000
+      - key: CACHE_DRIVER
+        value: file
+      - key: SESSION_DRIVER
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
       - key: APP_URL
-        sync: false
+        sync: true
       - key: VITE_API_BASE_URL
         value: /api
