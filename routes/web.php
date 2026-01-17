@@ -13,11 +13,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return response()->json([
-        'message' => 'Verus Warehouse API',
-        'status' => 'running',
-        'version' => '1.0.0',
-        'timestamp' => now()->toISOString()
-    ]);
-});
+// SPA catch-all route - must be last
+// This allows Vue Router to handle all client-side routing
+Route::get('/{any}', function () {
+    return view('app');
+})->where('any', '.*');

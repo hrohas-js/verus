@@ -1,0 +1,40 @@
+/* Global Styles for Verus Warehouse SPA */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* Ensure Vuetify app background is consistent */
+:root,
+#app,
+.v-application {
+  background-color: #f5f5f5;
+}
+
+/* Route transitions */
+.route-slide-fade-enter-active,
+.route-slide-fade-leave-active {
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.route-slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.route-slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
