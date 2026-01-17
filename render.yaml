@@ -5,6 +5,8 @@ services:
     plan: free
     buildCommand: |
       composer install --no-dev --optimize-autoloader
+      npm install
+      npm run build-only
       php artisan key:generate
       php artisan migrate --force
       php artisan config:cache
@@ -29,3 +31,7 @@ services:
         value: error
       - key: PORT
         value: 10000
+      - key: APP_URL
+        sync: false
+      - key: VITE_API_BASE_URL
+        value: /api
